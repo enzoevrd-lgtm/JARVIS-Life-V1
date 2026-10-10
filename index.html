@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#070b14">
+<title>Jarvis Life V1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<div class="brand-icon">J</div>
+<div>
+<h1>JARVIS LIFE</h1>
+<p>PERSONAL AI SYSTEM</p>
+</div>
+</div>
+
+<div class="system-status">
+<span class="status-dot"></span>
+SYSTÈME INITIALISÉ
+</div>
+
+<nav>
+<button class="nav-item active" data-section="assistant">◉ Assistant</button>
+<button class="nav-item" data-section="tasks">✓ Mes tâches</button>
+<button class="nav-item" data-section="account">♙ Mon compte</button>
+</nav>
+
+<div class="sidebar-bottom">
+<p>JARVIS LIFE V1.0</p>
+<p>PERSONAL ASSISTANT</p>
+</div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+<div>
+<p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
+<h2 id="page-title">Assistant personnel</h2>
+</div>
+<div class="online">
+<span class="status-dot"></span>
+EN LIGNE
+</div>
+</header>
+
+<section id="assistant-section" class="section">
+<div class="hero">
+<div class="orb"><div class="orb-core">J</div></div>
+<p class="eyebrow">JARVIS INTELLIGENCE SYSTEM</p>
+<h2>Bonjour, que puis-je faire pour vous ?</h2>
+<p class="muted">Votre espace pour organiser votre quotidien.</p>
+</div>
+
+<div class="chat-panel">
+<div id="chat-messages" class="chat-messages" aria-live="polite">
+<div class="message jarvis-message">
+<span class="message-label">JARVIS</span>
+Bonjour ! Je suis prêt. Vous pouvez me demander de l'aide
+pour votre organisation ou gérer vos tâches.
+</div>
+</div>
+
+<form id="chat-form" class="chat-form">
+<input id="chat-input" type="text"
+placeholder="Écrivez un message à Jarvis..."
+autocomplete="off" maxlength="1000" required>
+<button class="primary-button" type="submit">Envoyer ↗</button>
+</form>
+<p class="hint">Prototype V1 : les réponses sont simulées, sans IA externe.</p>
+</div>
+
+<div class="quick-actions">
+<button class="quick-card" data-prompt="Aide-moi à organiser ma journée">
+<span>◷</span>
+<strong>Organiser ma journée</strong>
+<small>Préparer un planning</small>
+</button>
+<button class="quick-card" data-prompt="Comment puis-je mieux m'organiser ?">
+<span>✧</span>
+<strong>Conseils</strong>
+<small>Améliorer mon organisation</small>
+</button>
+<button class="quick-card" data-prompt="Montre-moi comment gérer mes tâches">
+<span>✓</span>
+<strong>Mes tâches</strong>
+<small>Gérer mes objectifs</small>
+</button>
+</div>
+</section>
+
+<section id="tasks-section" class="section hidden">
+<div class="content-panel">
+<h3>Mes tâches</h3>
+<p class="muted">Organisez ce que vous devez faire.</p>
+<form id="task-form" class="task-form">
+<input id="task-input" type="text"
+placeholder="Ex. Réviser mes cours..." maxlength="200" required>
+<button class="primary-button" type="submit">Ajouter +</button>
+</form>
+<div id="task-list" class="task-list"></div>
+</div>
+</section>
+
+<section id="account-section" class="section hidden">
+<div class="content-panel account-panel">
+<h3>Mon compte</h3>
+<p class="muted">Créez votre compte ou connectez-vous pour préparer la synchronisation Supabase.</p>
+<form id="auth-form">
+<label for="email">Adresse e-mail</label>
+<input id="email" type="email" autocomplete="email"
+placeholder="vous@exemple.fr" required>
+<label for="password">Mot de passe</label>
+<input id="password" type="password"
+autocomplete="current-password" minlength="6"
+placeholder="6 caractères minimum" required>
+<div class="auth-actions">
+<button class="primary-button" type="submit" data-auth="login">Se connecter</button>
+<button class="secondary-button" type="button" id="signup-button">Créer un compte</button>
+</div>
+</form>
+<button id="logout-button" class="secondary-button hidden" type="button">
+Se déconnecter
+</button>
+<p id="auth-status" class="notice" role="status">Compte non connecté.</p>
+</div>
+</section>
+
+<div id="app-notice" class="app-notice" role="status"></div>
+<footer>JARVIS LIFE · VOTRE ASSISTANT PERSONNEL</footer>
+</main>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
+
