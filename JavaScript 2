@@ -1,0 +1,329 @@
+import { supabase, isSupabaseConfigured } from "./supabase.js";
+
+const $ = (selector) => document.querySelector(selector);
+
+const chatForm = $("#chat-form");
+const chatInput = $("#chat-input");
+const chatMessages = $("#chat-messages");
+const appNotice = $("#app-notice");
+const taskForm = $("#task-form");
+const taskInput = $("#task-input");
+const taskList = $("#task-list");
+const authForm = $("#auth-form");
+const authStatus = $("#auth-status");
+const signupButton = $("#signup-button");
+const logoutButton = $("#logout-button");
+
+let currentUser = null;
+let noticeTimer;
+
+function showNotice(message) {
+appNotice.textContent = message;
+clearTimeout(noticeTimer);
+noticeTimer = setTimeout(() => {
+appNotice.textContent = "";
+}, 5000);
+}
+
+function addMessage(text, sender) {
+const message = document.createElement("div");
+message.className = `message ${
+sender === "user" ? "user-message" : "jarvis-message"
+}`;
+
+const label = document.createElement("span");
+label.className = "message-label";
+label.textContent = sender === "user" ? "VOUS" : "JARVIS";
+
+const content = document.createElement("div");
+content.textContent = text;
+
+message.append(label, content);
+chatMessages.append(message);
+chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function getAssistantReply(text) {
+const message = text.toLocaleLowerCase("fr");
+
+if (message.includes("bonjour") || message.includes("salut")) {
+return "Bonjour ! Je suis Jarvis Life. Comment puis-je vous aider aujourd'hui ?";
+}
+
+if (message.includes("heure") || message.includes("date")) {
+return `Nous sommes le ${new Date().toLocaleDateString("fr-FR")}. Pour l'heure exacte, consultez l'horloge de votre appareil.`;
+}
+
+if (message.includes("journée") || message.includes("planning")) {
+return "Voici une méthode simple pour organiser votre journée :\n1. Notez vos trois priorités.\n2. Prévoyez des créneaux réalistes.\n3. Gardez du temps pour les pauses.\n\nAjoutez vos tâches dans l'onglet « Mes tâches ».";
+}
+
+if (message.includes("tâche") || message.includes("objectif")) {
+return "Ouvrez « Mes tâches » dans le menu. Vous pourrez ajouter des éléments, les cocher lorsqu'ils sont terminés et supprimer ceux dont vous n'avez plus besoin.";
+}
+
+if (message.includes("organisation") || message.includes("organiser")) {
+return "Mon conseil : notez tout ce que vous avez à faire, classez les tâches par priorité et commencez par une action simple. La régularité compte plus qu'un planning parfait.";
+}
+
+if (message.includes("aide")) {
+return "Je peux vous proposer des conseils d'organisation, vous aider à structurer votre journée et vous expliquer comment utiliser les tâches. Cette version est un prototype : elle n'utilise pas encore de véritable modèle d'IA.";
+}
+
+return "J'ai bien reçu votre message. Pour le moment, je fonctionne avec des réponses de démonstration. Une prochaine étape sera de connecter un véritable modèle d'intelligence artificielle via un serveur sécurisé.";
+}
+
+// Navigation
+const sections = {
+assistant: $("#assistant-section"),
+tasks: $("#tasks-section"),
+account: $("#account-section")
+};
+
+const titles = {
+assistant: "Assistant personnel",
+tasks: "Mes tâches",
+account: "Mon compte"
+};
+
+document.querySelectorAll(".nav-item").forEach((button) => {
+button.addEventListener("click", () => {
+const section = button.dataset.section;
+
+Object.entries(sections).forEach(([name, element]) => {
+element.classList.toggle("hidden", name !== section);
+});
+
+document.querySelectorAll(".nav-item").forEach((item) => {
+item.classList.toggle("active", item === button);
+});
+
+$("#page-title").textContent = titles[section];
+});
+});
+
+// Discussion
+chatForm.addEventListener("submit", (event) => {
+event.preventDefault();
+const text = chatInput.value.trim();
+
+if (!text) return;
+
+addMessage(text, "user");
+chatInput.value = "";
+
+// Réponse de démonstration, pas une véritable IA.
+addMessage(getAssistantReply(text), "jarvis");
+});
+
+document.querySelectorAll("[data-prompt]").forEach((button) => {
+button.addEventListener("click", () => {
+chatInput.value = button.dataset.prompt;
+chatInput.focus();
+chatForm.requestSubmit();
+});
+});
+
+// Tâches enregistrées sur cet appareil
+function getTasks() {
+try {
+return JSON.parse(localStorage.getItem("jarvis-life-tasks") || "[]");
+} catch {
+return [];
+}
+}
+
+function saveTasks(tasks) {
+localStorage.setItem("jarvis-life-tasks", JSON.stringify(tasks));
+}
+
+function renderTasks() {
+taskList.replaceChildren();
+const tasks = getTasks();
+
+if (tasks.length === 0) {
+const empty = document.createElement("p");
+empty.className = "muted";
+empty.textContent = "Aucune tâche pour le moment.";
+taskList.append(empty);
+return;
+}
+
+tasks.forEach((task) => {
+const row = document.createElement("div");
+row.className = `task-row${task.done ? " done" : ""}`;
+
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.checked = task.done;
+checkbox.setAttribute("aria-label", `Terminer ${task.text}`);
+
+checkbox.addEventListener("change", () => {
+const updated = getTasks().map((item) =>
+item.id === task.id ? { ...item, done: checkbox.checked } : item
+);
+saveTasks(updated);
+renderTasks();
+});
+
+const text = document.createElement("span");
+text.textContent = task.text;
+
+const remove = document.createElement("button");
+remove.type = "button";
+remove.textContent = "Supprimer";
+remove.addEventListener("click", () => {
+saveTasks(getTasks().filter((item) => item.id !== task.id));
+renderTasks();
+});
+
+row.append(checkbox, text, remove);
+taskList.append(row);
+});
+}
+
+taskForm.addEventListener("submit", (event) => {
+event.preventDefault();
+const text = taskInput.value.trim();
+
+if (!text) return;
+
+const tasks = getTasks();
+tasks.push({
+id: crypto.randomUUID(),
+text,
+done: false
+});
+
+saveTasks(tasks);
+taskInput.value = "";
+renderTasks();
+showNotice("Tâche ajoutée.");
+});
+
+renderTasks();
+
+// Comptes Supabase
+function updateAccountUI(user) {
+currentUser = user;
+authStatus.textContent = user
+? `Connecté : ${user.email}`
+: "Compte non connecté.";
+
+logoutButton.classList.toggle("hidden", !user);
+authForm.classList.toggle("hidden", !!user);
+signupButton.classList.toggle("hidden", !!user);
+}
+
+async function signUp() {
+if (!isSupabaseConfigured) {
+authStatus.textContent =
+"Configure d'abord l'URL et la clé publique dans supabase.js.";
+return;
+}
+
+const email = $("#email").value.trim();
+const password = $("#password").value;
+
+if (!email || password.length < 6) {
+authStatus.textContent =
+"Saisis un e-mail valide et un mot de passe d'au moins 6 caractères.";
+return;
+}
+
+signupButton.disabled = true;
+
+try {
+const { data, error } = await supabase.auth.signUp({
+email,
+password
+});
+
+if (error) throw error;
+
+if (data.session) {
+updateAccountUI(data.user);
+authStatus.textContent = "Compte créé et connecté.";
+} else {
+authStatus.textContent =
+"Demande envoyée. Vérifie ta boîte mail pour confirmer ton adresse.";
+}
+} catch (error) {
+authStatus.textContent = `Erreur : ${error.message}`;
+} finally {
+signupButton.disabled = false;
+}
+}
+
+authForm.addEventListener("submit", async (event) => {
+event.preventDefault();
+
+if (!isSupabaseConfigured) {
+authStatus.textContent =
+"Configure d'abord Supabase dans supabase.js.";
+return;
+}
+
+const email = $("#email").value.trim();
+const password = $("#password").value;
+const loginButton = authForm.querySelector('[data-auth="login"]');
+
+loginButton.disabled = true;
+
+try {
+const { data, error } = await supabase.auth.signInWithPassword({
+email,
+password
+});
+
+if (error) throw error;
+
+updateAccountUI(data.user);
+authStatus.textContent = "Connexion réussie.";
+} catch (error) {
+authStatus.textContent = `Connexion impossible : ${error.message}`;
+} finally {
+loginButton.disabled = false;
+}
+});
+
+signupButton.addEventListener("click", signUp);
+
+logoutButton.addEventListener("click", async () => {
+if (!supabase) return;
+
+const { error } = await supabase.auth.signOut();
+
+if (error) {
+authStatus.textContent = `Erreur : ${error.message}`;
+return;
+}
+
+updateAccountUI(null);
+authStatus.textContent = "Déconnexion réussie.";
+});
+
+async function initializeAuth() {
+if (!supabase) {
+updateAccountUI(null);
+authStatus.textContent =
+"Mode démo : ajoute tes identifiants Supabase pour activer les comptes.";
+return;
+}
+
+const { data, error } = await supabase.auth.getSession();
+
+if (error) {
+authStatus.textContent = `Erreur : ${error.message}`;
+return;
+}
+
+updateAccountUI(data.session?.user ?? null);
+
+supabase.auth.onAuthStateChange((_event, session) => {
+updateAccountUI(session?.user ?? null);
+});
+}
+
+initializeAuth();
+
